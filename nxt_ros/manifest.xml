@@ -16,7 +16,7 @@
   <url>http://ros.org/wiki/nxt_ros</url>
   <depend package="rospy"/>
   <depend package="nxt_python"/>
-  <depend package="kdl"/>
+  <!--depend package="kdl"/-->
   <depend package="sensor_msgs" /> 
   <depend package="nxt_msgs" /> 
 </package>

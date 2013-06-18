@@ -20,7 +20,7 @@
   <depend package="tf_conversions" />
   <depend package="nxt_msgs" />
   <depend package="nav_msgs" />
-  <depend package="kdl" />
+  <!--depend package="kdl" /-->
 
 </package>
 
