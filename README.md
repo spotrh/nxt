@@ -1,4 +1,4 @@
 ROSpberryNXT
 ============
 
-Modified NXT and related ROS-electric Stacks for raspberry
+Modified NXT and related ROS-Groovy Stacks for raspberry
