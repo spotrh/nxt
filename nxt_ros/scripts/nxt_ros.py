@@ -43,9 +43,9 @@ from nxt.sensor import Type
 import nxt.sensor 
 import nxt.motor 
 import thread
-from sensor_msgs.msg import JointState, Imu
+from sensor_msgs.msg import JointState, Imu, Range
 from std_msgs.msg import Bool
-from nxt_msgs.msg import Range, Contact, JointCommand, Color, Gyro, Accelerometer
+from nxt_msgs.msg import Contact, JointCommand, Color, Gyro, Accelerometer
 from PyKDL import Rotation
 
 POWER_TO_NM = 0.01
@@ -188,12 +188,12 @@ class UltraSonicSensor(Device):
         
     def trigger(self):
         ds = Range()
-        ds.header.frame_id = self.frame_id
+        ds.header.frame_id = '/ultrasonic_link'
         ds.header.stamp = rospy.Time.now()
         ds.range = self.ultrasonic.get_sample()/100.0
-        ds.spread_angle = self.spread
-        ds.range_min = self.min_range
-        ds.range_max = self.max_range
+        ds.field_of_view = self.spread
+        ds.min_range = self.min_range
+        ds.max_range = self.max_range
         self.pub.publish(ds)
  
 
