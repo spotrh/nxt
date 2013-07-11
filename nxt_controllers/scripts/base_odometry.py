@@ -37,9 +37,9 @@ import math
 import thread
 import tf
 from PyKDL import *
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Range
 from nav_msgs.msg import Odometry
-from nxt_msgs.msg import Range, JointCommand
+from nxt_msgs.msg import JointCommand
 from tf_conversions import posemath
 
 PUBLISH_TF = True
@@ -73,7 +73,7 @@ class BaseOdometry:
         position = {}
         for name, pos in zip(msg.name, msg.position):
             position[name] = pos
-        self.frame_id = 'base_link'      
+        self.frame_id = '/odom'      
         # initialize
         if not self.initialized:
             self.r_pos = position[self.r_joint]
