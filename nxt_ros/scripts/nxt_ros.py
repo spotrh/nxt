@@ -37,6 +37,7 @@ import roslib; roslib.load_manifest('nxt_ros')
 import nxt.locator
 import rospy
 import math
+import time
 from nxt.motor import PORT_A, PORT_B, PORT_C
 from nxt.sensor import PORT_1, PORT_2, PORT_3, PORT_4
 from nxt.sensor import Type
@@ -47,6 +48,7 @@ from sensor_msgs.msg import JointState, Imu, Range
 from std_msgs.msg import Bool
 from nxt_msgs.msg import Contact, JointCommand, Color, Gyro, Accelerometer
 from PyKDL import Rotation
+import nxt.execute
 
 POWER_TO_NM = 0.01
 POWER_MAX = 125
@@ -104,7 +106,29 @@ class Device:
           rospy.logwarn("caught an exception nxt.error.I2CError")
           pass
 
-
+class Execute():
+    def __init__(self, comm):
+        self.execute = nxt.execute.Execute(comm)
+        self.start()
+        
+    def needs_trigger(self):
+        return False
+    def start(self):
+        '''
+Starts a Program.'''
+        try:
+            self.execute.stop_program()
+        except nxt.error.DirProtError:
+            pass
+        rospy.loginfo("started DEMO_V")
+        self.execute.start_program()
+        time.sleep(0.1)
+    def stop(self):
+        '''
+Stop Program'''
+        self.execute.stop_program()
+        
+        
 class Motor(Device):
     def __init__(self, params, comm):
         Device.__init__(self, params)
@@ -382,6 +406,8 @@ def main():
             components.append(GyroSensor(c, b))
         elif c['type'] == 'accelerometer':
             components.append(AccelerometerSensor(c, b))
+        elif c['type'] == 'execute':
+            components.append(Execute(b))
         else:
             rospy.logerr('Invalid sensor/actuator type %s'%c['type'])
 
