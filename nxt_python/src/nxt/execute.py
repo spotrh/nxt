@@ -19,14 +19,15 @@ import nxt
 import rospy
 class Execute():
 
-    def __init__(self, brick):
+    def __init__(self, brick, fname):
         self.brick = brick
+        self.fname = fname
         #self.brick.play_tone(440, 800)
 
     def start_program(self):
 
         #try:
-        self.brick.start_program('DemoV2.rxe')
+        self.brick.start_program(self.fname+".rxe")
         #except nxt.error.DirProtError:
         #    pass
         #self.brick.start_program('DemoV2')

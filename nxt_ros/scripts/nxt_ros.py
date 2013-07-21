@@ -107,8 +107,9 @@ class Device:
           pass
 
 class Execute():
-    def __init__(self, comm):
-        self.execute = nxt.execute.Execute(comm)
+    def __init__(self, params, comm):
+        self.name = params['name']
+        self.execute = nxt.execute.Execute(comm, params['file'])
         self.start()
         
     def needs_trigger(self):
@@ -407,7 +408,7 @@ def main():
         elif c['type'] == 'accelerometer':
             components.append(AccelerometerSensor(c, b))
         elif c['type'] == 'execute':
-            components.append(Execute(b))
+            components.append(Execute(c, b))
         else:
             rospy.logerr('Invalid sensor/actuator type %s'%c['type'])
 
