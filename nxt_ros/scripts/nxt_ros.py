@@ -62,6 +62,8 @@ def check_params(ns, params):
             return False
     return True
 
+def shutdown(self):
+    pass 
 
 # base class for sensors
 class Device:
@@ -111,19 +113,18 @@ class Execute():
         self.name = params['name']
         self.execute = nxt.execute.Execute(comm, params['file'])
         self.start()
-        
+    
+    #Need better handling
+    #Joint states is reseted on Executable End!!
     def needs_trigger(self):
         return False
+        
     def start(self):
         '''
 Starts a Program.'''
-        try:
-            self.execute.stop_program()
-        except nxt.error.DirProtError:
-            pass
-        rospy.loginfo("started DEMO_V")
         self.execute.start_program()
         time.sleep(0.1)
+        
     def stop(self):
         '''
 Stop Program'''
@@ -144,7 +145,10 @@ class Motor(Device):
         
         # create subscriber
         self.sub = rospy.Subscriber('joint_command', JointCommand, self.cmd_cb, None, 2)
-
+        
+    def __exit__(self):
+        rospy.loginf("stopping Motors here?")
+        self.motor.run(0, 0)
 
     def cmd_cb(self, msg):
         if msg.name == self.name:
@@ -426,6 +430,7 @@ def main():
         if (now - last_callback_handle).to_sec() > 1.0/callback_handle_frequency:
             last_callback_handle = now
             rospy.sleep(0.01)
+    rospy.on_shutdown(shutdown)
 
 
 

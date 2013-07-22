@@ -26,15 +26,14 @@ class Execute():
 
     def start_program(self):
 
-        #try:
-        self.brick.start_program(self.fname+".rxe")
-        #except nxt.error.DirProtError:
-        #    pass
-        #self.brick.start_program('DemoV2')
-        self.brick.play_tone(440, 800)
-        #rospy.loginfo('passed')
+        try:
+            self.brick.stop_program()
+        except nxt.error.DirProtError:
+            pass
+            self.brick.start_program(self.fname+".rxe")
+            
         time.sleep(0.1)
     
     def stop_program(self):
         pass
-        #self.brick.stop_program()
+        self.brick.stop_program()
