@@ -33,7 +33,11 @@
 
 #include "rviz/display.h"
 #include "rviz/helpers/color.h"
-#include "rviz/properties/forwards.h"
+// #include "rviz/properties/forwards.h"
+#include <rviz/properties/property.h>
+#include <rviz/properties/color_property.h> 
+#include <rviz/properties/float_property.h>
+#include <rviz/properties/ros_topic_property.h>
 
 #include <nxt_msgs/Range.h>
 
