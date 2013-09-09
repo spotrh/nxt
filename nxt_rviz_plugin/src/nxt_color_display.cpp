@@ -28,7 +28,7 @@ NXTColorDisplay::NXTColorDisplay()
                                        this, SLOT( updateAlpha() ));
   topic_property_ = new rviz::RosTopicProperty( "Topic", "",
                                        QString::fromStdString( ros::message_traits::datatype<nxt_msgs::Color>() ),
-                                       "nxt_msgs::Color topic to subscribe to."
+                                       "nxt_msgs::Color topic to subscribe to.",
                                        this, SLOT (updateTopic() ));
 }
 
@@ -42,8 +42,8 @@ NXTColorDisplay::~NXTColorDisplay()
 
 void NXTColorDisplay::onInitialize()
 {
-  float alpha = alpha_property_->getFloat();
-  float display = display_property_->getFloat();
+  float alpha_ = alpha_property_->getFloat();
+  float displayLength_ = display_property_->getFloat();
 
   tf_filter_ = new tf::MessageFilter<nxt_msgs::Color>(*context_->getTFClient(), "", 10, update_nh_);
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
@@ -158,14 +158,10 @@ void NXTColorDisplay::reset()
 
 void NXTColorDisplay::updateAlpha()
 {
-  cylinder_->setAlpha( alpha_property_->getFloat() );
-  context_->queueRender();
 }
 
 void NXTColorDisplay::updateDisplayLength()
 {
-  cylinder_->setDisplayLength( display_property_->getFloat() );
-  context_->queueRender();
 }
 
 void NXTColorDisplay::updateTopic()
