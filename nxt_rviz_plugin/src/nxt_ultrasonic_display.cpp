@@ -1,7 +1,8 @@
 #include "nxt_ultrasonic_display.h"
 #include "rviz/visualization_manager.h"
+#include "rviz/properties/color_property.h"
+#include "rviz/properties/float_property.h"
 #include "rviz/properties/parse_color.h"
-#include "rviz/properties/property.h"
 #include "rviz/properties/ros_topic_property.h"
 //#include "rviz/properties/property_manager.h"
 //#include "rviz/common.h"
@@ -46,10 +47,10 @@ void NXTUltrasonicDisplay::onInitialize()
   Ogre::ColourValue color = color_property_->getOgreColor();
   float alpha = alpha_property_->getFloat();
 
-  tf_filter_ = new tf::MessageFilter<nxt_msgs::Range>(*vis_manager_->getTFClient(), "", 10, update_nh_);
+  tf_filter_ = new tf::MessageFilter<nxt_msgs::Range>(*context_->getTFClient(), "", 10, update_nh_);
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
-  cone_ = new rviz::Shape(rviz::Shape::Cone, vis_manager_->getSceneManager(), scene_node_);
+  cone_ = new rviz::Shape(rviz::Shape::Cone, context_->getSceneManager(), scene_node_);
 
   scene_node_->setVisible( false );
 
@@ -61,14 +62,14 @@ void NXTUltrasonicDisplay::onInitialize()
 
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(boost::bind(&NXTUltrasonicDisplay::incomingMessage, this, _1));
-  vis_manager_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
+  context_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
 }
 
 void NXTUltrasonicDisplay::clear()
 {
 
   messages_received_ = 0;
-  setStatus(rviz::status_levels::Warn, "Topic", "No messages received");
+  setStatus( StatusProperty::Warn, "Topic", "No messages received" );
 }
 
 void NXTUltrasonicDisplay::subscribe()
@@ -103,7 +104,7 @@ void NXTUltrasonicDisplay::fixedFrameChanged()
 {
   clear();
 
-  tf_filter_->setTargetFrame( fixed_frame_ );
+  tf_filter_->setTargetFrame( fixed_frame_.toStdString() );
 }
 
 void NXTUltrasonicDisplay::update(float wall_dt, float ros_dt)
@@ -133,7 +134,7 @@ void NXTUltrasonicDisplay::processMessage(const nxt_msgs::Range::ConstPtr& msg)
   pose.position.x = msg->range/2;
   pose.orientation.x = 0.707;
   pose.orientation.z = -0.707;
-  if (!vis_manager_->getFrameManager()->transform(msg->header, pose, position, orientation))
+  if (!context_->getFrameManager()->transform(msg->header, pose, position, orientation))
   {
     ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'", msg->header.frame_id.c_str(), fixed_frame_.c_str() );
   }
@@ -179,4 +180,4 @@ const char* NXTUltrasonicDisplay::getDescription()
 } // namespace nxt_rviz_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS( rviz, Grid, rviz::NXTUltrasonicDisplay, rviz::Display ) 
+PLUGINLIB_EXPORT_CLASS( rviz::NXTUltrasonicDisplay, rviz::Display )

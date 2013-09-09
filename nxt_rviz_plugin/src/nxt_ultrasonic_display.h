@@ -72,15 +72,6 @@ public:
 
   virtual void onInitialize();
 
-  void setTopic( const std::string& topic );
-  const std::string& getTopic() { return topic_; }
-
-  void setColor( const rviz::Color& color );
-  const rviz::Color& getColor() { return color_; }
-
-  void setAlpha( float alpha );
-  float getAlpha() { return alpha_; }
-
   // Overrides from Display
   virtual void targetFrameChanged() {}
   virtual void fixedFrameChanged();
@@ -91,6 +82,10 @@ public:
   static const char* getTypeStatic() { return "Range"; }
   virtual const char* getType() const { return getTypeStatic(); }
   static const char* getDescription();
+
+private Q_SLOTS:
+  void updateColor();
+  void updateTopic();
 
 protected:
   void subscribe();
@@ -116,9 +111,9 @@ protected:
   tf::MessageFilter<nxt_msgs::Range>* tf_filter_;
   nxt_msgs::Range::ConstPtr current_message_;
 
-  rviz::ColorPropertyWPtr color_property_;
-  rviz::ROSTopicStringPropertyWPtr topic_property_;
-  rviz::FloatPropertyWPtr alpha_property_;
+  rviz::ColorProperty* color_property_;
+  rviz::RosTopicProperty* topic_property_;
+  rviz::FloatProperty* alpha_property_;
 };
 
 } // namespace nxt_rviz_plugin
