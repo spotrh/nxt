@@ -1,7 +1,9 @@
 #include "nxt_ultrasonic_display.h"
 #include "rviz/visualization_manager.h"
+#include "rviz/properties/parse_color.h"
 #include "rviz/properties/property.h"
-#include "rviz/properties/property_manager.h"
+#include "rviz/properties/ros_topic_property.h"
+//#include "rviz/properties/property_manager.h"
 //#include "rviz/common.h"
 #include "rviz/frame_manager.h"
 #include "rviz/validate_floats.h"
@@ -17,9 +19,18 @@ namespace nxt_rviz_plugin
 {
 NXTUltrasonicDisplay::NXTUltrasonicDisplay()
   : Display()
-  , color_( 0.1f, 1.0f, 0.0f )
   , messages_received_(0)
 {
+  color_property_ = new ColorProperty( "Color", Qt::gray, 
+                                       "Color to draw the range.",
+                                       this, SLOT( updateColor() ));
+  alpha_property_ = new FloatProperty( "Alpha", 0.5f,
+                                       "Amount of transparency to apply to the range.",
+                                       this, SLOT( updateColor() ));
+  topic_property_ = new RosTopicProperty( "Topic", "",
+                                          QString::fromStdString( ros::message_traits::datatype<nxt_msgs::Range>() ),
+                                          "nxt_msgs::Range topic to subscribe to.",
+                                          this, SLOT (updateTopic() ));
 }
 
 NXTUltrasonicDisplay::~NXTUltrasonicDisplay()
@@ -32,6 +43,9 @@ NXTUltrasonicDisplay::~NXTUltrasonicDisplay()
 
 void NXTUltrasonicDisplay::onInitialize()
 {
+  Ogre::ColourValue color = color_property_->getOgreColor();
+  float alpha = alpha_property_->getFloat();
+
   tf_filter_ = new tf::MessageFilter<nxt_msgs::Range>(*vis_manager_->getTFClient(), "", 10, update_nh_);
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
@@ -39,11 +53,11 @@ void NXTUltrasonicDisplay::onInitialize()
 
   scene_node_->setVisible( false );
 
-  setAlpha( 0.5f );
+  // setAlpha( 0.5f );
   Ogre::Vector3 scale( 0, 0, 0);
   // rviz::scaleRobotToOgre( scale );
   cone_->setScale(scale);
-  cone_->setColor(color_.r_, color_.g_, color_.b_, alpha_);
+  cone_->setColor(color.r, color.g, color.b, alpha);
 
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(boost::bind(&NXTUltrasonicDisplay::incomingMessage, this, _1));
@@ -55,39 +69,6 @@ void NXTUltrasonicDisplay::clear()
 
   messages_received_ = 0;
   setStatus(rviz::status_levels::Warn, "Topic", "No messages received");
-}
-
-void NXTUltrasonicDisplay::setTopic( const std::string& topic )
-{
-  unsubscribe();
-
-  topic_ = topic;
-
-  subscribe();
-
-  propertyChanged(topic_property_);
-
-  causeRender();
-}
-
-void NXTUltrasonicDisplay::setColor( const rviz::Color& color )
-{
-  color_ = color;
-
-  propertyChanged(color_property_);
-
-  processMessage(current_message_);
-  causeRender();
-}
-
-void NXTUltrasonicDisplay::setAlpha( float alpha )
-{
-  alpha_ = alpha;
-
-  propertyChanged(alpha_property_);
-
-  processMessage(current_message_);
-  causeRender();
 }
 
 void NXTUltrasonicDisplay::subscribe()
@@ -177,19 +158,18 @@ void NXTUltrasonicDisplay::reset()
   clear();
 }
 
-void NXTUltrasonicDisplay::createProperties()
+void NXTUltrasonicDisplay::updateColor()
 {
-  topic_property_ = property_manager_->createProperty<rviz::ROSTopicStringProperty>( "Topic", property_prefix_, boost::bind( &NXTUltrasonicDisplay::getTopic, this ),
-                                                                                boost::bind( &NXTUltrasonicDisplay::setTopic, this, _1 ), parent_category_, this );
-  setPropertyHelpText(topic_property_, "nxt_msgs::Range topic to subscribe to.");
-  rviz::ROSTopicStringPropertyPtr topic_prop = topic_property_.lock();
-  topic_prop->setMessageType(ros::message_traits::datatype<nxt_msgs::Range>());
-  color_property_ = property_manager_->createProperty<rviz::ColorProperty>( "Color", property_prefix_, boost::bind( &NXTUltrasonicDisplay::getColor, this ),
-                                                                      boost::bind( &NXTUltrasonicDisplay::setColor, this, _1 ), parent_category_, this );
-  setPropertyHelpText(color_property_, "Color to draw the range.");
-  alpha_property_ = property_manager_->createProperty<rviz::FloatProperty>( "Alpha", property_prefix_, boost::bind( &NXTUltrasonicDisplay::getAlpha, this ),
-                                                                       boost::bind( &NXTUltrasonicDisplay::setAlpha, this, _1 ), parent_category_, this );
-  setPropertyHelpText(alpha_property_, "Amount of transparency to apply to the range.");
+  QColor color = color_property_->getColor();
+  color.setAlphaF( alpha_property_->getFloat() );
+  grid_->setColor( qtToOgre( color ));
+  context_->queueRender();
+}
+
+void NXTUltrasonicDisplay::updateTopic()
+{
+  unsubscribe();
+  subscribe();
 }
 
 const char* NXTUltrasonicDisplay::getDescription()
@@ -197,3 +177,6 @@ const char* NXTUltrasonicDisplay::getDescription()
   return "Displays data from a nxt_msgs::Range message as a cone.";
 }
 } // namespace nxt_rviz_plugin
+
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_DECLARE_CLASS( rviz, Grid, rviz::NXTUltrasonicDisplay, rviz::Display ) 
