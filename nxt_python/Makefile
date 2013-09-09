@@ -1,7 +1,7 @@
 all: nxt-python
 
 TARBALL     = build/nxt-python-1.1.2.zip
-TARBALL_URL = http://nxt-python.googlecode.com/files/nxt-python-1.1.2.zip
+TARBALL_URL = http://spot.fedorapeople.org/nxt-python-1.1.2-fixed.zip
 UNPACK_CMD  = unzip
 SOURCE_DIR  = build/nxt-python-1.1.2
 include $(shell rospack find mk)/download_unpack_build.mk
