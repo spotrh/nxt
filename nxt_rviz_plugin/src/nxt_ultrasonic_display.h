@@ -81,7 +81,6 @@ public:
 
   static const char* getTypeStatic() { return "Range"; }
   virtual const char* getType() const { return getTypeStatic(); }
-  static const char* getDescription();
 
 private Q_SLOTS:
   void updateColor();

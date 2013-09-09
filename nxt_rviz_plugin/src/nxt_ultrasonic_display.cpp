@@ -22,13 +22,13 @@ NXTUltrasonicDisplay::NXTUltrasonicDisplay()
   : Display()
   , messages_received_(0)
 {
-  color_property_ = new ColorProperty( "Color", Qt::gray, 
+  color_property_ = new rviz::ColorProperty( "Color", Qt::gray, 
                                        "Color to draw the range.",
                                        this, SLOT( updateColor() ));
-  alpha_property_ = new FloatProperty( "Alpha", 0.5f,
+  alpha_property_ = new rviz::FloatProperty( "Alpha", 0.5f,
                                        "Amount of transparency to apply to the range.",
                                        this, SLOT( updateColor() ));
-  topic_property_ = new RosTopicProperty( "Topic", "",
+  topic_property_ = new rviz::RosTopicProperty( "Topic", "",
                                           QString::fromStdString( ros::message_traits::datatype<nxt_msgs::Range>() ),
                                           "nxt_msgs::Range topic to subscribe to.",
                                           this, SLOT (updateTopic() ));
@@ -69,7 +69,7 @@ void NXTUltrasonicDisplay::clear()
 {
 
   messages_received_ = 0;
-  setStatus( StatusProperty::Warn, "Topic", "No messages received" );
+  setStatus( rviz::StatusProperty::Warn, "Topic", "No messages received" );
 }
 
 void NXTUltrasonicDisplay::subscribe()
@@ -121,11 +121,7 @@ void NXTUltrasonicDisplay::processMessage(const nxt_msgs::Range::ConstPtr& msg)
 
   ++messages_received_;
 
-  {
-    std::stringstream ss;
-    ss << messages_received_ << " messages received";
-    setStatus(rviz::status_levels::Ok, "Topic", ss.str());
-  }
+  setStatus(rviz::status_levels::Ok, "Topic", QString::number( messages_received_ ) + " messages received" );
 
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
@@ -136,7 +132,8 @@ void NXTUltrasonicDisplay::processMessage(const nxt_msgs::Range::ConstPtr& msg)
   pose.orientation.z = -0.707;
   if (!context_->getFrameManager()->transform(msg->header, pose, position, orientation))
   {
-    ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'", msg->header.frame_id.c_str(), fixed_frame_.c_str() );
+    ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'",
+               msg->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
   }
 
   cone_->setPosition(position);
@@ -163,7 +160,7 @@ void NXTUltrasonicDisplay::updateColor()
 {
   QColor color = color_property_->getColor();
   color.setAlphaF( alpha_property_->getFloat() );
-  grid_->setColor( qtToOgre( color ));
+  cone_->setColor( rviz::qtToOgre( color ));
   context_->queueRender();
 }
 
@@ -173,11 +170,7 @@ void NXTUltrasonicDisplay::updateTopic()
   subscribe();
 }
 
-const char* NXTUltrasonicDisplay::getDescription()
-{
-  return "Displays data from a nxt_msgs::Range message as a cone.";
-}
 } // namespace nxt_rviz_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS( rviz::NXTUltrasonicDisplay, rviz::Display )
+PLUGINLIB_EXPORT_CLASS( NXTUltrasonicDisplay, rviz::Display )
