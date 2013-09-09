@@ -173,4 +173,4 @@ void NXTUltrasonicDisplay::updateTopic()
 } // namespace nxt_rviz_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS( NXTUltrasonicDisplay::NXTUltrasonicDisplay, rviz::Display )
+PLUGINLIB_EXPORT_CLASS( nxt_rviz_plugin::NXTUltrasonicDisplay, rviz::Display )

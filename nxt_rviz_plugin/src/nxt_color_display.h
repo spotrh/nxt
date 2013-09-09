@@ -3,7 +3,9 @@
 
 #include "rviz/display.h"
 #include "rviz/helpers/color.h"
-#include "rviz/properties/forwards.h"
+//#include "rviz/properties/forwards.h"
+#include <rviz/properties/float_property.h>
+#include <rviz/properties/ros_topic_property.h>
 
 #include <nxt_msgs/Color.h>
 
@@ -38,25 +40,19 @@ public:
 
   virtual void onInitialize();
 
-  void setTopic( const std::string& topic );
-  const std::string& getTopic() { return topic_; }
-
-  void setAlpha( float alpha );
-  float getAlpha() { return alpha_; }
-
-  void setDisplayLength( float displayLength );
-  float getDisplayLength() { return displayLength_; }
-
   // Overrides from Display
   virtual void targetFrameChanged() {}
   virtual void fixedFrameChanged();
-  virtual void createProperties();
   virtual void update(float wall_dt, float ros_dt);
   virtual void reset();
 
   static const char* getTypeStatic() { return "Color"; }
   virtual const char* getType() const { return getTypeStatic(); }
-  static const char* getDescription();
+
+private Q_SLOTS:
+  void updateAlpha();
+  void updateDisplayLength();
+  void updateTopic();
 
 protected:
   void subscribe();
@@ -82,9 +78,9 @@ protected:
   tf::MessageFilter<nxt_msgs::Color>* tf_filter_;
   nxt_msgs::Color::ConstPtr current_message_;
 
-  rviz::ROSTopicStringPropertyWPtr topic_property_;
-  rviz::FloatPropertyWPtr alpha_property_;
-  rviz::FloatPropertyWPtr display_property_;
+  rviz::FloatProperty* alpha_property_;
+  rviz::FloatProperty* display_property_;
+  rviz::RosTopicProperty* topic_property_;
 };
 
 } // namespace nxt_rviz_plugin

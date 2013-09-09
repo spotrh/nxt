@@ -1,7 +1,8 @@
 #include "nxt_color_display.h"
 #include "rviz/visualization_manager.h"
-#include "rviz/properties/property.h"
-#include "rviz/properties/property_manager.h"
+#include "rviz/properties/float_property.h"
+#include "rviz/properties/ros_topic_property.h"
+//#include "rviz/properties/property_manager.h"
 //#include "rviz/common.h"
 #include "rviz/frame_manager.h"
 #include "rviz/validate_floats.h"
@@ -19,6 +20,16 @@ NXTColorDisplay::NXTColorDisplay()
   : Display()
   , messages_received_(0)
 {
+  display_property_ = new rviz::FloatProperty( "Display Length", 0.003f,
+                                       "Display length.",
+                                       this, SLOT( updateDisplayLength() ));
+  alpha_property_ = new rviz::FloatProperty( "Alpha", 0.5f,
+                                       "Amount of transparency to apply to the circle.",
+                                       this, SLOT( updateAlpha() ));
+  topic_property_ = new rviz::RosTopicProperty( "Topic", "",
+                                       QString::fromStdString( ros::message_traits::datatype<nxt_msgs::Color>() ),
+                                       "nxt_msgs::Color topic to subscribe to."
+                                       this, SLOT (updateTopic() ));
 }
 
 NXTColorDisplay::~NXTColorDisplay()
@@ -31,15 +42,18 @@ NXTColorDisplay::~NXTColorDisplay()
 
 void NXTColorDisplay::onInitialize()
 {
-  tf_filter_ = new tf::MessageFilter<nxt_msgs::Color>(*vis_manager_->getTFClient(), "", 10, update_nh_);
+  float alpha = alpha_property_->getFloat();
+  float display = display_property_->getFloat();
+
+  tf_filter_ = new tf::MessageFilter<nxt_msgs::Color>(*context_->getTFClient(), "", 10, update_nh_);
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
-  cylinder_ = new rviz::Shape(rviz::Shape::Cylinder, vis_manager_->getSceneManager(), scene_node_);
+  cylinder_ = new rviz::Shape(rviz::Shape::Cylinder, context_->getSceneManager(), scene_node_);
 
   scene_node_->setVisible( false );
 
-  setAlpha( 0.5f );
-  setDisplayLength( 0.003f );
+  // setAlpha( 0.5f );
+  // setDisplayLength( 0.003f );
 
   Ogre::Vector3 scale( 0, 0, 0);
   // rviz::scaleRobotToOgre( scale );
@@ -47,49 +61,15 @@ void NXTColorDisplay::onInitialize()
 
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(boost::bind(&NXTColorDisplay::incomingMessage, this, _1));
-  vis_manager_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
+  context_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
 }
 
 void NXTColorDisplay::clear()
 {
 
   messages_received_ = 0;
-  setStatus(rviz::status_levels::Warn, "Topic", "No messages received");
+  setStatus( rviz::StatusProperty::Warn, "Topic", "No messages received" );
 }
-
-void NXTColorDisplay::setTopic( const std::string& topic )
-{
-  unsubscribe();
-
-  topic_ = topic;
-
-  subscribe();
-
-  propertyChanged(topic_property_);
-
-  causeRender();
-}
-
-void NXTColorDisplay::setAlpha( float alpha )
-{
-  alpha_ = alpha;
-
-  propertyChanged(alpha_property_);
-
-  processMessage(current_message_);
-  causeRender();
-}
-
-void NXTColorDisplay::setDisplayLength( float displayLength )
-{
-  displayLength_ = displayLength;
-
-  propertyChanged(display_property_);
-
-  processMessage(current_message_);
-  causeRender();
-}
-
 
 void NXTColorDisplay::subscribe()
 {
@@ -123,7 +103,7 @@ void NXTColorDisplay::fixedFrameChanged()
 {
   clear();
 
-  tf_filter_->setTargetFrame( fixed_frame_ );
+  tf_filter_->setTargetFrame( fixed_frame_.toStdString() );
 }
 
 void NXTColorDisplay::update(float wall_dt, float ros_dt)
@@ -140,11 +120,7 @@ void NXTColorDisplay::processMessage(const nxt_msgs::Color::ConstPtr& msg)
 
   ++messages_received_;
 
-  {
-    std::stringstream ss;
-    ss << messages_received_ << " messages received";
-    setStatus(rviz::status_levels::Ok, "Topic", ss.str());
-  }
+  setStatus( rviz::StatusProperty::Ok, "Topic", QString::number( messages_received_ ) + " messages received" );
 
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
@@ -154,9 +130,10 @@ void NXTColorDisplay::processMessage(const nxt_msgs::Color::ConstPtr& msg)
   pose.position.x = 0.0185 + displayLength_/2;
   pose.orientation.x = 0.707;
   pose.orientation.z = -0.707;
-  if (!vis_manager_->getFrameManager()->transform(msg->header, pose, position, orientation))
+  if (!context_->getFrameManager()->transform(msg->header, pose, position, orientation))
   {
-    ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'", msg->header.frame_id.c_str(), fixed_frame_.c_str() );
+    ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'",
+               msg->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
   }
 
   cylinder_->setPosition(position);
@@ -179,26 +156,26 @@ void NXTColorDisplay::reset()
   clear();
 }
 
-void NXTColorDisplay::createProperties()
+void NXTColorDisplay::updateAlpha()
 {
-  topic_property_ = property_manager_->createProperty<rviz::ROSTopicStringProperty>( "Topic", property_prefix_, boost::bind( &NXTColorDisplay::getTopic, this ),
-                                                                                     boost::bind( &NXTColorDisplay::setTopic, this, _1 ), parent_category_, this );
-  setPropertyHelpText(topic_property_, "nxt_msgs::Color topic to subscribe to.");
-  rviz::ROSTopicStringPropertyPtr topic_prop = topic_property_.lock();
-  topic_prop->setMessageType(ros::message_traits::datatype<nxt_msgs::Color>());
-
-
-  alpha_property_ = property_manager_->createProperty<rviz::FloatProperty>( "Alpha", property_prefix_, boost::bind( &NXTColorDisplay::getAlpha, this ),
-                                                                            boost::bind( &NXTColorDisplay::setAlpha, this, _1 ), parent_category_, this );
-
-  display_property_ = property_manager_->createProperty<rviz::FloatProperty>( "Display Length", property_prefix_, boost::bind( &NXTColorDisplay::getDisplayLength, this ),
-                                                                            boost::bind( &NXTColorDisplay::setDisplayLength, this, _1 ), parent_category_, this );
-
-  setPropertyHelpText(alpha_property_, "Amount of transparency to apply to the circle.");
+  cylinder_->setAlpha( alpha_property_->getFloat() );
+  context_->queueRender();
 }
 
-const char* NXTColorDisplay::getDescription()
+void NXTColorDisplay::updateDisplayLength()
 {
-  return "Displays data from a nxt_msgs::Color message as a cirle of color.";
+  cylinder_->setDisplayLength( display_property_->getFloat() );
+  context_->queueRender();
 }
+
+void NXTColorDisplay::updateTopic()
+{
+  unsubscribe();
+  subscribe();
+}
+
 } // namespace nxt_rviz_plugin    
+
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS( nxt_rviz_plugin::NXTColorDisplay, rviz::Display )
+
