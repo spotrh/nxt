@@ -121,7 +121,7 @@ void NXTUltrasonicDisplay::processMessage(const nxt_msgs::Range::ConstPtr& msg)
 
   ++messages_received_;
 
-  setStatus(rviz::status_levels::Ok, "Topic", QString::number( messages_received_ ) + " messages received" );
+  setStatus( rviz::StatusProperty::Ok, "Topic", QString::number( messages_received_ ) + " messages received" );
 
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
@@ -173,4 +173,4 @@ void NXTUltrasonicDisplay::updateTopic()
 } // namespace nxt_rviz_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS( NXTUltrasonicDisplay, rviz::Display )
+PLUGINLIB_EXPORT_CLASS( NXTUltrasonicDisplay::NXTUltrasonicDisplay, rviz::Display )
